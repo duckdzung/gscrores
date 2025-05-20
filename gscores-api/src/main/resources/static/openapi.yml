@@ -1,0 +1,119 @@
+openapi: 3.0.0
+info:
+  title: G-Scores API
+  version: v1
+  description: API for managing student scores and generating reports.
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+components:
+  schemas:
+    StudentDetailsDto:
+      type: object
+      properties:
+        registrationNumber:
+          type: string
+        fullName:
+          type: string
+        scores:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreDto"
+    ScoreDto:
+      type: object
+      properties:
+        subjectCode:
+          type: string
+        subjectName:
+          type: string
+        score:
+          type: number
+          format: double
+    SubjectStatsDto:
+      type: object
+      properties:
+        subjectCode:
+          type: string
+        subjectName:
+          type: string
+        averageScore:
+          type: number
+          format: double
+        medianScore:
+          type: number
+          format: double
+        scoreDistribution:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+    StudentGroupScoreDto:
+      type: object
+      properties:
+        registrationNumber:
+          type: string
+        fullName:
+          type: string
+        totalScore:
+          type: number
+          format: double
+        scores:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreDto"
+
+paths:
+  /api/scores/{registrationNumber}:
+    get:
+      summary: Get scores by registration number
+      operationId: getScoresByRegistrationNumber
+      parameters:
+        - name: registrationNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentDetailsDto"
+        "404":
+          description: Student not found
+  /api/reports/statistics:
+    get:
+      summary: Get score statistics for all subjects
+      operationId: getScoreStatistics
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubjectStatsDto"
+  /api/reports/top-A:
+    get:
+      summary: Get top students in Group A
+      operationId: getTopAGroupStudents
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudentGroupScoreDto"
