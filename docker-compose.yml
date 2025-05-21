@@ -4,13 +4,50 @@ services:
     image: postgres:16
     container_name: gscores_postgres
     environment:
-      POSTGRES_USER: gscores
-      POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: gscores_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - gscores-network
+
+  backend:
+    build:
+      context: ./gscores-api
+      dockerfile: Dockerfile
+    container_name: gscores_backend
+    depends_on:
+      - postgres_db
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+    ports:
+      - "${BACKEND_PORT}:8080"
+    networks:
+      - gscores-network
+
+  frontend:
+    build:
+      context: ./gscores-ui
+      dockerfile: Dockerfile
+    container_name: gscores_frontend
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+    ports:
+      - "${FRONTEND_PORT}:80"
+    networks:
+      - gscores-network
 
 volumes:
   postgres_data:
+
+networks:
+  gscores-network:
+    driver: bridge

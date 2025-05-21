@@ -12,6 +12,15 @@ interface ReportContentProps {
     onSubjectChange: (value: string) => void;
 }
 
+const levelNameMapping: Record<string, string> = {
+    level1: '0 - 3.99 points',
+    level2: '4 - 5.99 points',
+    level3: '6 - 7.99 points',
+    level4: '8 - 10 points',
+};
+
+const preferredLevelOrder = ['< 4 points', '4 - <6 points', '6 - <8 points', '>= 8 points'];
+
 export function ReportContent({
     currentSubjectCode,
     allSubjectStats,
@@ -22,10 +31,18 @@ export function ReportContent({
     const currentSubjectStats = allSubjectStats.find((s) => s.subjectCode === currentSubjectCode);
 
     const scoreDistributionData = currentSubjectStats?.scoreDistribution
-        ? Object.entries(currentSubjectStats.scoreDistribution).map(([name, count]) => ({
-              name,
-              count,
-          }))
+        ? Object.entries(currentSubjectStats.scoreDistribution)
+              .map(([levelKey, count]) => ({
+                  name: levelNameMapping[levelKey] || levelKey,
+                  count,
+              }))
+              .sort((a, b) => {
+                  const indexA = preferredLevelOrder.indexOf(a.name);
+                  const indexB = preferredLevelOrder.indexOf(b.name);
+                  if (indexA === -1) return 1;
+                  if (indexB === -1) return -1;
+                  return indexA - indexB;
+              })
         : [];
 
     return (

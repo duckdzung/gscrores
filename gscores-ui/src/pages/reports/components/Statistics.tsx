@@ -1,21 +1,22 @@
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Define a broader color palette for dynamic levels
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF1919'];
+const COLORS = ['#FF8042', '#FFBB28', '#00C49F', '#0088FE', '#AF19FF'];
 
 // Styles cho Tooltip
 const styles = {
     tooltipContainer: {
-        backgroundColor: '#333',
+        backgroundColor: 'rgba(51, 51, 51, 0.9)',
         color: '#fff',
         padding: '10px',
         borderRadius: '8px',
         boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+        border: 'none',
     },
     tooltipTitle: {
         fontSize: '14px',
         fontWeight: 'bold',
-        margin: 0,
+        margin: '0 0 5px 0',
     },
     tooltipValue: {
         fontSize: '12px',
@@ -25,31 +26,29 @@ const styles = {
 
 const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-        const { name, value } = payload[0].payload;
-        const fill = payload[0].payload.fill;
+        const dataPoint = payload[0].payload;
+        const name = dataPoint.name;
+        const count = dataPoint.count;
+        const color = payload[0].color || payload[0].payload.fill;
+
+        // Safely access and calculate percentage
+        const percentValue = payload[0].percent;
+        let percentageString = '';
+        if (typeof percentValue === 'number' && !isNaN(percentValue)) {
+            percentageString = `(${(percentValue * 100).toFixed(0)}%)`;
+        }
+        // else, percentageString remains empty if percentValue is not a valid number
+
         return (
-            <div style={{ ...styles.tooltipContainer, border: `2px solid ${fill}` }}>
-                <p style={styles.tooltipTitle}>{`${name}`}</p>
-                <p style={styles.tooltipValue}>{value} students</p>
+            <div style={{ ...styles.tooltipContainer, border: `1px solid ${color || '#ccc'}` }}>
+                <p style={{ ...styles.tooltipTitle, color: color || '#fff' }}>{name}</p>
+                <p style={styles.tooltipValue}>
+                    {count} students {percentageString}
+                </p>
             </div>
         );
     }
     return null;
-};
-
-const RADIAN = Math.PI / 180;
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    if (percent < 0.05) return null; // Don't render label if too small
-
-    return (
-        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
-            {`${name} (${(percent * 100).toFixed(0)}%)`}
-        </text>
-    );
 };
 
 export interface StatisticsChartData {
@@ -58,12 +57,6 @@ export interface StatisticsChartData {
 }
 
 export function Statistics({ data }: { data: StatisticsChartData[] }) {
-    const sortedData = [...data].sort((a, b) => {
-        const numA = parseInt(a.name.replace('level', ''), 10);
-        const numB = parseInt(b.name.replace('level', ''), 10);
-        return numA - numB;
-    });
-
     if (!data || data.length === 0) {
         return <p>No score distribution data available for this subject.</p>;
     }
@@ -73,28 +66,35 @@ export function Statistics({ data }: { data: StatisticsChartData[] }) {
             <ResponsiveContainer>
                 <PieChart>
                     <Pie
-                        data={sortedData}
+                        data={data}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={renderCustomizedLabel}
+                        label={false}
                         outerRadius="80%"
                         fill="#8884d8"
                         dataKey="count"
                         nameKey="name"
                     >
-                        {sortedData.map((_, index) => (
+                        {data.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
                     <Legend
                         formatter={(value, entry: any) => {
-                            const { name, count } = entry.payload?.payload || {};
-                            if (name && count !== undefined) {
-                                return `${name}: ${count}`;
+                            const count = entry.payload?.payload?.count;
+                            const percent = entry.payload?.percent;
+
+                            let legendText = value;
+                            if (count !== undefined) {
+                                legendText += `: ${count}`;
                             }
-                            return value;
+                            if (percent !== undefined) {
+                                legendText += ` (${(percent * 100).toFixed(0)}%)`;
+                            }
+
+                            return <span style={{ color: entry.color }}>{legendText}</span>;
                         }}
                     />
                 </PieChart>
