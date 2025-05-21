@@ -12,6 +12,7 @@ export default defineConfig({
         },
     },
     build: {
+        sourcemap: false,
         rollupOptions: {
             output: {
                 manualChunks(id) {
@@ -19,12 +20,10 @@ export default defineConfig({
                         const basic = id.split('node_modules/')[1];
                         const parts = basic.split('/');
 
-                        // Xử lý package bình thường
                         if (parts[0] !== '.pnpm') {
                             return parts[0];
                         }
 
-                        // Xử lý package từ .pnpm (ví dụ: @babel/core)
                         const packageName = parts[1];
                         return packageName.startsWith('@') ? packageName.split('/')[0] + '/' + parts[2] : packageName;
                     }
