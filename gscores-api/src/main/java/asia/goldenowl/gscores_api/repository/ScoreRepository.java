@@ -23,4 +23,13 @@ public interface ScoreRepository extends JpaRepository<Score, ScoreId> {
             "FROM Score sc WHERE sc.subject.subjectCode = :subjectCode")
     Map<String, Long> getScoreDistributionForSubject(@Param("subjectCode") String subjectCode);
 
+    @Query("SELECT sc.subject.subjectCode as subjectCode, " +
+            "SUM(CASE WHEN sc.score >= 8 THEN 1 ELSE 0 END) as level1, " +
+            "SUM(CASE WHEN sc.score < 8 AND sc.score >= 6 THEN 1 ELSE 0 END) as level2, " +
+            "SUM(CASE WHEN sc.score < 6 AND sc.score >= 4 THEN 1 ELSE 0 END) as level3, " +
+            "SUM(CASE WHEN sc.score < 4 THEN 1 ELSE 0 END) as level4 " +
+            "FROM Score sc " +
+            "GROUP BY sc.subject.subjectCode")
+    List<Object[]> getScoreDistributionForAllSubjects();
+
 }
